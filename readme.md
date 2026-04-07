@@ -1,11 +1,47 @@
-# TimerTrigger - C<span>#</span>
+# FutureMe Backend
 
-The `TimerTrigger` makes it incredibly easy to have your functions executed on a schedule. This sample demonstrates a simple use case of calling your function every 5 minutes.
+The backend for **FutureMe**, a small full-stack Azure project that lets users schedule emails to their future selves.
 
-## How it works
+This backend is built with **Azure Functions** and handles:
+- receiving scheduled email requests through an HTTP API
+- storing scheduled emails in **Azure Table Storage**
+- processing pending emails on a timer
+- sending emails through **Azure Communication Services Email**
 
-For a `TimerTrigger` to work, you provide a schedule in the form of a [cron expression](https://en.wikipedia.org/wiki/Cron#CRON_expression)(See the link for full details). A cron expression is a string with 6 separate expressions which represent a given schedule via patterns. The pattern we use to represent every 5 minutes is `0 */5 * * * *`. This, in plain text, means: "When seconds is equal to 0, minutes is divisible by 5, for any hour, day of the month, month, day of the week, or year".
+## Overview
 
-## Learn more
+FutureMe is split into two parts:
 
-<TODO> Documentation
+- **Frontend**: React app for entering and scheduling emails
+- **Backend**: Azure Functions app for storing, processing, and sending those emails
+
+This repository contains the **backend only**.
+
+## Features
+
+- HTTP-triggered Azure Function for scheduling new emails
+- Timer-triggered Azure Function for processing pending emails
+- Azure Table Storage persistence
+- Azure Communication Services Email integration
+- Status tracking for scheduled emails
+- Error handling for failed sends
+
+## Tech stack
+
+- **C#**
+- **Azure Functions (.NET isolated)**
+- **Azure Table Storage**
+- **Azure Communication Services Email**
+
+## Architecture
+
+```text
+Frontend (React)
+    ↓
+HTTP-triggered Azure Function (ScheduleEmail)
+    ↓
+Azure Table Storage (ScheduledEmails)
+    ↓
+Timer-triggered Azure Function (SendScheduledEmails)
+    ↓
+Azure Communication Services Email
