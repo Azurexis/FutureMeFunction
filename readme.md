@@ -8,6 +8,8 @@ This backend is built with **Azure Functions** and handles:
 - processing pending emails on a timer
 - sending emails through **Azure Communication Services Email**
 
+!(Diagram image)[Diagram.png]
+
 ## Overview
 
 FutureMe is split into two parts:
