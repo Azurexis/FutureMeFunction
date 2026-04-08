@@ -82,9 +82,11 @@ After processing:
 ## Partitioning strategy
 
 The PartitionKey is based on the scheduled send date in UTC:
+
 yyyyMMdd
 
 Example:
+
 20260408
 
 This makes the storage layout better aligned with the timer-based processing workflow, since emails are grouped by the day they should be sent.
@@ -106,8 +108,8 @@ If the frontend runs locally or on a different domain, the public API layer must
 
 Depending on the setup, that may be:
 
-Function App CORS when the frontend calls the Function directly
-API Management CORS when the frontend calls APIM instead
+- Function App CORS when the frontend calls the Function directly
+- API Management CORS when the frontend calls APIM instead
 
 ## Deployment
 
