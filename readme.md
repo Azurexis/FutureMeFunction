@@ -67,7 +67,7 @@ A timer-triggered function checks for emails that:
 
 - are still marked Pending
 - are due to be sent
-- 
+
 ### 4. Send email
 
 When an email is due, the backend sends it through Azure Communication Services Email.
