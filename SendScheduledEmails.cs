@@ -2,7 +2,6 @@ using Azure;
 using Azure.Communication.Email;
 using Azure.Data.Tables;
 using Microsoft.Azure.Functions.Worker;
-using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.Extensions.Logging;
 
 namespace FutureMeFunction;
@@ -23,8 +22,8 @@ public class SendScheduledEmails
 
         _tableClient = tableClient;
         _emailClient = emailClient;
-        _senderAddress = Environment.GetEnvironmentVariable("EmailCommunicationDomain")
-            ?? throw new InvalidOperationException("EmailCommunicationDomain is not configured.");
+        _senderAddress = Environment.GetEnvironmentVariable("AcsEmailSender")
+            ?? throw new InvalidOperationException("AcsEmailSender is not configured.");
     }
 
     //Function
@@ -32,8 +31,10 @@ public class SendScheduledEmails
     public async Task Run([TimerTrigger("0 0 */1 * * *")] TimerInfo myTimer)
     {
         //Loop through entities in table
-        string todayPartitionKey = DateTime.UtcNow.ToString("yyyyMMdd");
-        string yesterdayPartitionKey = DateTime.UtcNow.AddDays(-1).ToString("yyyyMMdd");
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+
+        string todayPartitionKey = now.ToString("yyyyMMdd");
+        string yesterdayPartitionKey = now.AddDays(-1).ToString("yyyyMMdd");
 
         var dueEmails = _tableClient.Query<ScheduledEmailEntity>(
             e =>
@@ -61,6 +62,10 @@ public class SendScheduledEmails
                 if (string.IsNullOrWhiteSpace(scheduledEmailEntity.Subject)) scheduledEmailEntity.Subject = "A mail from your past self!";
                 if (string.IsNullOrWhiteSpace(scheduledEmailEntity.Body)) scheduledEmailEntity.Body = "This message had no content.";
 
+                //Throw error is scheduled time is invalid
+                if (scheduledEmailEntity.ScheduledForUtc == default)
+                    throw new InvalidOperationException("ScheduledForUtc is missing or invalid.");
+
                 //Compose email content
                 EmailContent emailContent = new EmailContent(scheduledEmailEntity.Subject);
                 emailContent.PlainText = scheduledEmailEntity.Body;
@@ -78,10 +83,10 @@ public class SendScheduledEmails
                 scheduledEmailEntity.Status = "Sent";
                 scheduledEmailEntity.LastError = null;
 
-                _tableClient.UpdateEntity(scheduledEmailEntity, scheduledEmailEntity.ETag, TableUpdateMode.Replace);
+                _tableClient.UpdateEntity(scheduledEmailEntity, scheduledEmailEntity.ETag, TableUpdateMode.Merge);
 
                 //Log success
-                _logger.LogInformation("Mail successfully sent!");
+                _logger.LogInformation($"Mail successfully sent for entity {scheduledEmailEntity.PartitionKey}/{scheduledEmailEntity.RowKey} to {scheduledEmailEntity.RecipientEmail}.");
             }
 
             //Log exception
@@ -97,7 +102,7 @@ public class SendScheduledEmails
                     scheduledEmailEntity.Status = "Failed";
                     scheduledEmailEntity.LastError = ex.ToString();
 
-                    _tableClient.UpdateEntity(scheduledEmailEntity, scheduledEmailEntity.ETag, TableUpdateMode.Replace);
+                    _tableClient.UpdateEntity(scheduledEmailEntity, scheduledEmailEntity.ETag, TableUpdateMode.Merge);
                 }
 
                 //Log exception
